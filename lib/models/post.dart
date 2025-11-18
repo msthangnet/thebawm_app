@@ -19,6 +19,8 @@ class Post {
   final int commentCount;
   final int shareCount;
   final int viewCount;
+  final Map<String, dynamic>? source;
+  final String postCollection;
 
   Post({
     required this.id,
@@ -38,9 +40,11 @@ class Post {
     required this.commentCount,
     required this.shareCount,
     required this.viewCount,
+    this.source,
+    required this.postCollection,
   });
 
-  factory Post.fromFirestore(DocumentSnapshot doc) {
+  factory Post.fromFirestore(DocumentSnapshot doc, {String? type}) {
     final raw = doc.data();
     final data = (raw is Map<String, dynamic>) ? raw : <String, dynamic>{};
 
@@ -57,6 +61,27 @@ class Post {
       return DateTime.now();
     }
 
+    String getPostCollection(String? postType) {
+        switch(postType) {
+            case 'page':
+                return 'pagesPost';
+            case 'group':
+                return 'groupPost';
+            case 'event':
+                return 'eventsPost';
+            case 'event_announcement':
+                return 'eventAnnouncementPosts';
+            case 'quiz':
+                return 'quizzesPost';
+            case 'quiz_announcement':
+                return 'quizAnnouncementPosts';
+            default:
+                return 'usersPost';
+        }
+    }
+
+    final postType = type ?? data['postType'] as String? ?? 'user';
+
     return Post(
       id: doc.id,
       text: (data['text'] ?? '') as String,
@@ -64,7 +89,7 @@ class Post {
           ? List<String>.from(data['mediaUrls'])
           : <String>[],
       mediaType: data['mediaType'] as String?,
-      postType: data['postType'] as String?,
+      postType: postType,
       pageId: data['pageId'] as String?,
       groupId: data['groupId'] as String?,
       eventId: data['eventId'] as String?,
@@ -76,6 +101,8 @@ class Post {
       commentCount: (data['commentCount'] ?? 0) as int,
       shareCount: (data['shareCount'] ?? 0) as int,
       viewCount: (data['viewCount'] ?? 0) as int,
+      source: data['source'] is Map ? data['source'] as Map<String, dynamic> : null,
+      postCollection: getPostCollection(postType),
     );
   }
 
@@ -102,26 +129,58 @@ class Post {
       commentCount: commentCount ?? this.commentCount,
       shareCount: shareCount ?? this.shareCount,
       viewCount: viewCount,
+      source: source,
+      postCollection: postCollection,
     );
   }
 }
 
 class PostPermissions {
-  final bool canPost;
-  final bool canPostImages;
-  final bool canPostVideos;
+  final List<String> canPost;
+  final List<String> canUploadImage;
+  final List<String> canUploadVideo;
+  final List<String> canSchedulePost;
+  final Map<String, int> dailyPostLimit;
+  final Map<String, int> imageUploadLimit;
+  final List<String> canEditOwnPost;
+  final List<String> canDeleteOwnPost;
+  final List<String> canDeleteOthersPosts;
 
   PostPermissions({
     required this.canPost,
-    required this.canPostImages,
-    required this.canPostVideos,
+    required this.canUploadImage,
+    required this.canUploadVideo,
+    required this.canSchedulePost,
+    required this.dailyPostLimit,
+    required this.imageUploadLimit,
+    required this.canEditOwnPost,
+    required this.canDeleteOwnPost,
+    required this.canDeleteOthersPosts,
   });
 
   factory PostPermissions.fromFirestore(Map<String, dynamic> data) {
     return PostPermissions(
-      canPost: data['canPost'] ?? false,
-      canPostImages: data['canPostImages'] ?? false,
-      canPostVideos: data['canPostVideos'] ?? false,
+      canPost: List<String>.from(data['canPost'] ?? []),
+      canUploadImage: List<String>.from(data['canUploadImage'] ?? []),
+      canUploadVideo: List<String>.from(data['canUploadVideo'] ?? []),
+      canSchedulePost: List<String>.from(data['canSchedulePost'] ?? []),
+      dailyPostLimit: Map<String, int>.from(data['dailyPostLimit'] ?? {}),
+      imageUploadLimit: Map<String, int>.from(data['imageUploadLimit'] ?? {}),
+      canEditOwnPost: List<String>.from(data['canEditOwnPost'] ?? []),
+      canDeleteOwnPost: List<String>.from(data['canDeleteOwnPost'] ?? []),
+      canDeleteOthersPosts: List<String>.from(data['canDeleteOthersPosts'] ?? []),
     );
   }
+
+  static PostPermissions get defaultPermissions => PostPermissions(
+        canPost: ['Admin', 'Standard', 'Plus', 'Pro'],
+        canUploadImage: ['Admin', 'Standard', 'Plus', 'Pro'],
+        canUploadVideo: ['Admin', 'Plus', 'Pro'],
+        canSchedulePost: ['Admin', 'Pro'],
+        dailyPostLimit: {'Admin': 1000, 'Pro': 50, 'Plus': 20, 'Standard': 10, 'Inactive': 0},
+        imageUploadLimit: {'Admin': 10, 'Pro': 8, 'Plus': 4, 'Standard': 2, 'Inactive': 0},
+        canEditOwnPost: ['Admin', 'Standard', 'Plus', 'Pro'],
+        canDeleteOwnPost: ['Admin', 'Standard', 'Plus', 'Pro'],
+        canDeleteOthersPosts: ['Admin'],
+      );
 }
