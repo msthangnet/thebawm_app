@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myapp/models/post.dart';
@@ -7,6 +8,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 class PostService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  // Broadcast stream to notify UI when posts change (create/update/delete)
+  final StreamController<void> _updatesController = StreamController<void>.broadcast();
+
+  Stream<void> get updates => _updatesController.stream;
+
+  void notifyUpdates() {
+    try {
+      _updatesController.add(null);
+    } catch (_) {}
+  }
 
   Future<void> createPost({
     required String text,
@@ -77,6 +88,8 @@ class PostService {
     }
 
     await _firestore.collection(postCollection).add(data);
+    // Notify listeners (UI) that a new post is available
+    notifyUpdates();
   }
 
   Stream<List<Post>> getPosts() {
@@ -122,6 +135,84 @@ class PostService {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// Returns a stream that merges global `posts` snapshots and user/friends `usersPost` snapshots.
+  /// This provides lower-latency updates for the feed by listening to Firestore snapshots.
+  Stream<List<Post>> getFeedPostsStream(String userId) {
+    final controller = StreamController<List<Post>>.broadcast();
+
+    controller.onListen = () {
+      final Map<String, Post> merged = {};
+      final List<StreamSubscription> userPostSubs = [];
+      StreamSubscription? postsSub;
+      StreamSubscription? connectionsSub;
+
+      void emit() {
+        final list = merged.values.toList();
+        list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        try {
+          if (!controller.isClosed) controller.add(list);
+        } catch (_) {}
+      }
+
+      postsSub = _firestore.collection('posts').orderBy('createdAt', descending: true).snapshots().listen((snap) {
+        for (final doc in snap.docs) {
+          final p = Post.fromFirestore(doc);
+          merged['posts/${doc.id}'] = p;
+        }
+        emit();
+      }, onError: (e) {
+        try { if (!controller.isClosed) controller.addError(e); } catch(_) {}
+      });
+
+      // listen to connections and dynamically subscribe to usersPost queries for friend batches
+      connectionsSub = _firestore.collection('users').doc(userId).collection('connections').snapshots().listen((connSnap) {
+        final friendIds = connSnap.docs.map((d) => d.id).toList();
+        // include self
+        if (!friendIds.contains(userId)) friendIds.add(userId);
+
+        // cancel previous userPost subscriptions
+        for (final s in userPostSubs) {
+          s.cancel();
+        }
+        userPostSubs.clear();
+
+        // Firestore 'whereIn' supports up to 10 items per query; batch if needed
+        const batchSize = 10;
+        for (var i = 0; i < friendIds.length; i += batchSize) {
+          final batch = friendIds.sublist(i, (i + batchSize) > friendIds.length ? friendIds.length : i + batchSize);
+          if (batch.isEmpty) continue;
+          final q = _firestore.collection('usersPost').where('authorId', whereIn: batch).orderBy('createdAt', descending: true);
+          final sub = q.snapshots().listen((snap) {
+            for (final doc in snap.docs) {
+              final p = Post.fromFirestore(doc, type: 'user');
+              merged['usersPost/${doc.id}'] = p;
+            }
+            emit();
+          }, onError: (e) {
+            try { if (!controller.isClosed) controller.addError(e); } catch(_) {}
+          });
+          userPostSubs.add(sub);
+        }
+      }, onError: (e) {
+        try { if (!controller.isClosed) controller.addError(e); } catch(_) {}
+      });
+
+      // cleanup when subscription count goes to zero
+      controller.onCancel = () async {
+        await postsSub?.cancel();
+        await connectionsSub?.cancel();
+        for (final s in userPostSubs) {
+          await s.cancel();
+        }
+        if (!controller.isClosed) {
+          try { controller.close(); } catch (_) {}
+        }
+      };
+    };
+
+    return controller.stream;
   }
 
   Future<PostPermissions> getPostPermissions() async {

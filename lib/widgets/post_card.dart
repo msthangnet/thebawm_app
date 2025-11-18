@@ -105,6 +105,8 @@ class _PostCardState extends State<PostCard> {
         await batch.commit();
 
         Fluttertoast.showToast(msg: 'Post deleted');
+        // notify global listeners so feed/profile lists refresh
+        PostService().notifyUpdates();
       } catch (e) {
         Fluttertoast.showToast(msg: 'Failed to delete post: $e');
       } finally {
@@ -144,6 +146,7 @@ class _PostCardState extends State<PostCard> {
         );
       });
       Fluttertoast.showToast(msg: 'Post updated');
+      PostService().notifyUpdates();
     } catch (e) {
       Fluttertoast.showToast(msg: 'Failed to update post: $e');
     } finally {

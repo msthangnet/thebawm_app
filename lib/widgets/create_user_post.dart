@@ -22,6 +22,7 @@ class _CreateUserPostState extends State<CreateUserPost> {
   final ImagePicker _picker = ImagePicker();
   List<XFile> _mediaFiles = [];
   String? _mediaType;
+  DateTime? _scheduledAt;
   PostPermissions? _permissions;
   int _postsToday = 0;
   bool _checking = true;
@@ -54,7 +55,7 @@ class _CreateUserPostState extends State<CreateUserPost> {
         authorId: user.uid,
         authorDisplayName: displayName,
         postType: 'user',
-        scheduledAt: null,
+        scheduledAt: _scheduledAt,
         source: "Post on user timeline '$displayName'",
       );
 
@@ -64,6 +65,7 @@ class _CreateUserPostState extends State<CreateUserPost> {
       setState(() {
         _mediaFiles = [];
         _mediaType = null;
+        _scheduledAt = null;
       });
       widget.onPostCreated();
     } catch (e) {
@@ -95,6 +97,34 @@ class _CreateUserPostState extends State<CreateUserPost> {
     setState(() {
       _mediaFiles.addAll(pickedFiles);
       _mediaType = 'image';
+    });
+  }
+
+  Future<void> _pickSchedule() async {
+    final now = DateTime.now();
+    // ignore: use_build_context_synchronously
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(minutes: 10)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null) return;
+    // ignore: use_build_context_synchronously
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now.add(const Duration(minutes: 10))),
+    );
+    if (time == null) return;
+    final scheduled = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (scheduled.isBefore(now)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Scheduled time must be in the future.')));
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _scheduledAt = scheduled;
     });
   }
 
@@ -189,11 +219,32 @@ class _CreateUserPostState extends State<CreateUserPost> {
                         }
                       },
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.schedule, color: Colors.orange),
+                      onPressed: () async {
+                        await _pickSchedule();
+                      },
+                    ),
                   ],
                 ),
-                ElevatedButton(
-                  onPressed: _createPost,
-                  child: const Text('Post'),
+                Row(
+                  children: [
+                    if (_scheduledAt != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Chip(
+                          label: Text('Scheduled: ${_scheduledAt!.toLocal().toString().substring(0,16)}'),
+                          deleteIcon: const Icon(Icons.close),
+                          onDeleted: () {
+                            setState(() { _scheduledAt = null; });
+                          },
+                        ),
+                      ),
+                    ElevatedButton(
+                      onPressed: _createPost,
+                      child: const Text('Post'),
+                    ),
+                  ],
                 ),
               ],
             ),

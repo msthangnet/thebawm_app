@@ -22,6 +22,7 @@ class _CreatePostState extends State<CreatePost> {
   List<XFile> _mediaFiles = [];
   String? _mediaType;
   bool _loading = false;
+  DateTime? _scheduledAt;
 
   Future<void> _pickImages() async {
     final user = Provider.of<AuthProvider>(context, listen: false).userProfile;
@@ -104,12 +105,14 @@ class _CreatePostState extends State<CreatePost> {
         authorId: user.uid,
         authorDisplayName: user.displayName ?? '',
         postType: 'user', // Explicitly user post
+        scheduledAt: _scheduledAt,
       );
 
       _textController.clear();
       setState(() {
         _mediaFiles = [];
         _mediaType = null;
+        _scheduledAt = null;
       });
 
       Fluttertoast.showToast(msg: "Post created!");
@@ -120,6 +123,33 @@ class _CreatePostState extends State<CreatePost> {
         _loading = false;
       });
     }
+  }
+
+  Future<void> _pickSchedule() async {
+    final now = DateTime.now();
+    // ignore: use_build_context_synchronously
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(minutes: 10)),
+      firstDate: now,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (date == null) return;
+    // ignore: use_build_context_synchronously
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now.add(const Duration(minutes: 10))),
+    );
+    if (time == null) return;
+    final scheduled = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (scheduled.isBefore(now)) {
+      Fluttertoast.showToast(msg: 'Scheduled time must be in the future.');
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _scheduledAt = scheduled;
+    });
   }
 
   @override
@@ -196,6 +226,21 @@ class _CreatePostState extends State<CreatePost> {
                   IconButton(
                     icon: const Icon(Icons.videocam, color: Colors.blue),
                     onPressed: () => _pickVideo(),
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.schedule, color: Colors.orange),
+                  onPressed: () => _pickSchedule(),
+                ),
+                if (_scheduledAt != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Chip(
+                      label: Text('Scheduled: ${_scheduledAt!.toLocal().toString().substring(0,16)}'),
+                      deleteIcon: const Icon(Icons.close),
+                      onDeleted: () {
+                        setState(() { _scheduledAt = null; });
+                      },
+                    ),
                   ),
                 ElevatedButton(
                   onPressed: _loading ? null : _createPost,
