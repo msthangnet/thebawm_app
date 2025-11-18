@@ -41,24 +41,41 @@ class Post {
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final raw = doc.data();
+    final data = (raw is Map<String, dynamic>) ? raw : <String, dynamic>{};
+
+    DateTime parseCreatedAt(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      if (v is String) {
+        try {
+          return DateTime.parse(v);
+        } catch (_) {
+          return DateTime.now();
+        }
+      }
+      return DateTime.now();
+    }
+
     return Post(
       id: doc.id,
-      text: data['text'] ?? '',
-      mediaUrls: List<String>.from(data['mediaUrls'] ?? []),
-      mediaType: data['mediaType'],
-      postType: data['postType'],
-      pageId: data['pageId'],
-      groupId: data['groupId'],
-      eventId: data['eventId'],
-      quizId: data['quizId'],
-      authorId: data['authorId'],
-      authorDisplayName: data['authorDisplayName'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      likes: List<String>.from(data['likes'] ?? []),
-      commentCount: data['commentCount'] ?? 0,
-      shareCount: data['shareCount'] ?? 0,
-      viewCount: data['viewCount'] ?? 0,
+      text: (data['text'] ?? '') as String,
+      mediaUrls: (data['mediaUrls'] is List)
+          ? List<String>.from(data['mediaUrls'])
+          : <String>[],
+      mediaType: data['mediaType'] as String?,
+      postType: data['postType'] as String?,
+      pageId: data['pageId'] as String?,
+      groupId: data['groupId'] as String?,
+      eventId: data['eventId'] as String?,
+      quizId: data['quizId'] as String?,
+      authorId: (data['authorId'] ?? '') as String,
+      authorDisplayName: (data['authorDisplayName'] ?? '') as String,
+      createdAt: parseCreatedAt(data['createdAt']),
+      likes: (data['likes'] is List) ? List<String>.from(data['likes']) : <String>[],
+      commentCount: (data['commentCount'] ?? 0) as int,
+      shareCount: (data['shareCount'] ?? 0) as int,
+      viewCount: (data['viewCount'] ?? 0) as int,
     );
   }
 
