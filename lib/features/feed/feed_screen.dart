@@ -90,7 +90,10 @@ class _FeedScreenState extends State<FeedScreen> {
                           return CreatePost(permissions: permissions);
                         }
                         final post = posts[index - 1];
-                        return PostCard(post: post, permissions: permissions);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                          child: PostCard(post: post, permissions: permissions),
+                        );
                       },
                     );
                   },
