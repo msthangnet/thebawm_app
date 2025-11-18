@@ -19,6 +19,8 @@ class PostService {
     String? groupId,
     String? eventId,
     String? quizId,
+    DateTime? scheduledAt,
+    String? source,
   }) async {
     final List<String> mediaUrls = [];
     for (final mediaFile in mediaFiles) {
@@ -46,7 +48,7 @@ class PostService {
             postCollection = 'usersPost';
     }
 
-    await _firestore.collection(postCollection).add({
+    final data = {
       'text': text,
       'mediaUrls': mediaUrls,
       'mediaType': mediaType,
@@ -62,7 +64,19 @@ class PostService {
       'commentCount': 0,
       'shareCount': 0,
       'viewCount': 0,
-    });
+    };
+
+    if (scheduledAt != null) {
+      data['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+    } else {
+      data['scheduledAt'] = null;
+    }
+
+    if (source != null) {
+      data['source'] = source;
+    }
+
+    await _firestore.collection(postCollection).add(data);
   }
 
   Stream<List<Post>> getPosts() {

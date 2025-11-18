@@ -25,6 +25,7 @@ class _PostCardState extends State<PostCard> {
   int _likeCount = 0;
   bool _isDeleting = false;
   bool _editing = false;
+  // these flags are used to disable actions while processing
   final TextEditingController _editController = TextEditingController();
 
   @override
@@ -220,8 +221,10 @@ class _PostCardState extends State<PostCard> {
                       }
                     },
                     itemBuilder: (ctx) => [
-                      if (isOwnPost && canEdit) const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      if (isOwnPost || isAdmin || canDeleteOthers) const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      if (isOwnPost && canEdit)
+                        PopupMenuItem(value: 'edit', enabled: !_isDeleting && !_editing, child: const Text('Edit')),
+                      if (isOwnPost || isAdmin || canDeleteOthers)
+                        PopupMenuItem(value: 'delete', enabled: !_isDeleting && !_editing, child: const Text('Delete')),
                     ],
                   ),
               ],
