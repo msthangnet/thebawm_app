@@ -92,7 +92,7 @@ class _FeedScreenState extends State<FeedScreen> {
                         final post = posts[index - 1];
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                          child: PostCard(post: post, permissions: permissions),
+                          child: PostCard(key: ValueKey(post.id), post: post, permissions: permissions),
                         );
                       },
                     );

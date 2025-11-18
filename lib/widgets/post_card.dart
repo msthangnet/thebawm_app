@@ -38,6 +38,22 @@ class _PostCardState extends State<PostCard> {
     _likeCount = post.likes.length;
   }
 
+  @override
+  void didUpdateWidget(covariant PostCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // update internal post if parent provided a new Post instance (for example
+    // when author profile gets attached asynchronously in the feed stream)
+    if (oldWidget.post.id != widget.post.id || (oldWidget.post.author == null && widget.post.author != null)) {
+      setState(() {
+        post = widget.post;
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        final userId = auth.user?.uid;
+        _isLiked = userId != null ? post.likes.contains(userId) : false;
+        _likeCount = post.likes.length;
+      });
+    }
+  }
+
   Future<void> _toggleLike() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final userId = auth.user?.uid;

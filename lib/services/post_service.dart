@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myapp/models/post.dart';
+import 'package:myapp/models/user_profile.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 
@@ -17,6 +18,16 @@ class PostService {
     try {
       _updatesController.add(null);
     } catch (_) {}
+  }
+
+  Future<UserProfile?> _getUserProfile(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        return UserProfile.fromFirestore(doc);
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> createPost({
@@ -159,7 +170,15 @@ class PostService {
       postsSub = _firestore.collection('posts').orderBy('createdAt', descending: true).snapshots().listen((snap) {
         for (final doc in snap.docs) {
           final p = Post.fromFirestore(doc);
-          merged['posts/${doc.id}'] = p;
+          final key = 'posts/${doc.id}';
+          merged[key] = p;
+          // fetch author profile asynchronously and attach when available
+          _getUserProfile(p.authorId).then((author) {
+            if (author != null) {
+              merged[key] = p.copyWith(author: author);
+              emit();
+            }
+          }).catchError((_) {});
         }
         emit();
       }, onError: (e) {
@@ -187,7 +206,15 @@ class PostService {
           final sub = q.snapshots().listen((snap) {
             for (final doc in snap.docs) {
               final p = Post.fromFirestore(doc, type: 'user');
-              merged['usersPost/${doc.id}'] = p;
+              final key = 'usersPost/${doc.id}';
+              merged[key] = p;
+              // fetch author profile and attach
+              _getUserProfile(p.authorId).then((author) {
+                if (author != null) {
+                  merged[key] = p.copyWith(author: author);
+                  emit();
+                }
+              }).catchError((_) {});
             }
             emit();
           }, onError: (e) {
