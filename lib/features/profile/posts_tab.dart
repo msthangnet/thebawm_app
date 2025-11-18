@@ -5,7 +5,7 @@ import 'package:myapp/services/user_post_service.dart';
 import 'package:myapp/services/post_service.dart';
 import 'package:myapp/widgets/empty_state.dart';
 import 'package:myapp/widgets/post_card.dart';
-import 'package:myapp/widgets/create_post.dart';
+import 'package:myapp/widgets/create_user_post.dart';
 
 class PostsTab extends StatelessWidget {
   final String userId;
@@ -40,7 +40,7 @@ class PostsTab extends StatelessWidget {
               if (isCurrentUser) {
                 return ListView(
                   children: [
-                    CreatePost(permissions: permissions),
+                    CreateUserPost(onPostCreated: () {}),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 32.0),
                       child: EmptyState(
@@ -66,7 +66,7 @@ class PostsTab extends StatelessWidget {
                 itemCount: isCurrentUser ? posts.length + 1 : posts.length,
                 itemBuilder: (context, index) {
                   if (isCurrentUser && index == 0) {
-                    return CreatePost(permissions: permissions);
+                    return CreateUserPost(onPostCreated: () {});
                   }
                   final postIndex = isCurrentUser ? index - 1 : index;
                   return Padding(
