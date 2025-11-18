@@ -1,0 +1,77 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-image",
+      "description": "A vibrant image of diverse friends laughing together at an outdoor cafe.",
+      "imageUrl": "https://picsum.photos/seed/100/1200/800",
+      "imageHint": "community friends"
+    },
+    {
+      "id": "feature-1",
+      "description": "A close-up of a smartphone screen showing a sleek social media profile page.",
+      "imageUrl": "https://picsum.photos/seed/101/600/400",
+      "imageHint": "profile interface"
+    },
+    {
+      "id": "feature-2",
+      "description": "A dynamic grid of photos and videos, representing a social media feed.",
+      "imageUrl": "https://picsum.photos/seed/102/600/400",
+      "imageHint": "social feed"
+    },
+    {
+      "id": "feature-3",
+      "description": "A person typing on a laptop, creating a new post for their social feed.",
+      "imageUrl": "https://picsum.photos/seed/103/600/400",
+      "imageHint": "creating post"
+    },
+    {
+      "id": "default-avatar",
+      "description": "Default user avatar.",
+      "imageUrl": "https://picsum.photos/seed/avatar/200/200",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "default-cover",
+      "description": "Default user profile cover image.",
+      "imageUrl": "https://picsum.photos/seed/cover/1200/400",
+      "imageHint": "abstract pattern"
+    },
+    {
+      "id": "default-page-avatar",
+      "description": "Default page avatar.",
+      "imageUrl": "https://picsum.photos/seed/page_avatar/200/200",
+      "imageHint": "business logo"
+    },
+    {
+      "id": "default-page-cover",
+      "description": "Default page cover image.",
+      "imageUrl": "https://picsum.photos/seed/page_cover/1200/400",
+      "imageHint": "office building"
+    },
+    {
+      "id": "post-image-1",
+      "description": "A scenic landscape photo shared on a post.",
+      "imageUrl": "https://picsum.photos/seed/post1/800/600",
+      "imageHint": "mountain landscape"
+    },
+    {
+      "id": "post-image-2",
+      "description": "A delicious-looking meal shared on a post.",
+      "imageUrl": "https://picsum.photos/seed/post2/800/600",
+      "imageHint": "food plate"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "Avatar for Jane Doe.",
+      "imageUrl": "https://picsum.photos/seed/jane/200/200",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "Avatar for John Smith.",
+      "imageUrl": "https://picsum.photos/seed/john/200/200",
+      "imageHint": "man portrait"
+    }
+  ]
+}

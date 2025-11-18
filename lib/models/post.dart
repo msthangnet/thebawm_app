@@ -6,6 +6,11 @@ class Post {
   final String text;
   final List<String> mediaUrls;
   final String? mediaType;
+  final String? postType;
+  final String? pageId;
+  final String? groupId;
+  final String? eventId;
+  final String? quizId;
   final String authorId;
   final String authorDisplayName;
   final UserProfile? author;
@@ -20,6 +25,11 @@ class Post {
     required this.text,
     required this.mediaUrls,
     this.mediaType,
+    this.postType,
+    this.pageId,
+    this.groupId,
+    this.eventId,
+    this.quizId,
     required this.authorId,
     required this.authorDisplayName,
     this.author,
@@ -37,6 +47,11 @@ class Post {
       text: data['text'] ?? '',
       mediaUrls: List<String>.from(data['mediaUrls'] ?? []),
       mediaType: data['mediaType'],
+      postType: data['postType'],
+      pageId: data['pageId'],
+      groupId: data['groupId'],
+      eventId: data['eventId'],
+      quizId: data['quizId'],
       authorId: data['authorId'],
       authorDisplayName: data['authorDisplayName'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -57,6 +72,11 @@ class Post {
       text: text,
       mediaUrls: mediaUrls,
       mediaType: mediaType,
+      postType: postType,
+      pageId: pageId,
+      groupId: groupId,
+      eventId: eventId,
+      quizId: quizId,
       authorId: authorId,
       authorDisplayName: authorDisplayName,
       author: author ?? this.author,

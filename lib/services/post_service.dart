@@ -14,6 +14,11 @@ class PostService {
     required String? mediaType,
     required String authorId,
     required String authorDisplayName,
+    String? postType,
+    String? pageId,
+    String? groupId,
+    String? eventId,
+    String? quizId,
   }) async {
     final List<String> mediaUrls = [];
     for (final mediaFile in mediaFiles) {
@@ -23,10 +28,16 @@ class PostService {
       mediaUrls.add(url);
     }
 
-    await _firestore.collection('posts').add({
+    // Write to usersPost collection to match web app schema.
+    await _firestore.collection('usersPost').add({
       'text': text,
       'mediaUrls': mediaUrls,
       'mediaType': mediaType,
+      'postType': postType,
+      'pageId': pageId,
+      'groupId': groupId,
+      'eventId': eventId,
+      'quizId': quizId,
       'authorId': authorId,
       'authorDisplayName': authorDisplayName,
       'createdAt': FieldValue.serverTimestamp(),
@@ -55,9 +66,78 @@ class PostService {
   }
 
   Future<List<Post>> getFeedPosts(String userId) async {
-    // This is a simplified feed. In a real app, you'd have a more complex algorithm.
-    final snapshot = await _firestore.collection('posts').orderBy('createdAt', descending: true).get();
-    return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
+    // Mirror web app behavior: include posts from connections (usersPost) and
+    // context posts (posts) for followed pages/groups/events/quizzes.
+    try {
+      // 1) Get connected user ids
+      final connSnap = await _firestore.collection('users').doc(userId).collection('connections').where('status', isEqualTo: 'connected').get();
+      final friendIds = connSnap.docs.map((d) => d.id).toList();
+      friendIds.add(userId);
+
+      // 2) Read current user's profile to obtain followed/participated ids (if present)
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userData = userDoc.exists ? (userDoc.data() as Map<String, dynamic>) : <String, dynamic>{};
+      final followedPages = List<String>.from(userData['followedPages'] ?? []);
+      final followedGroups = List<String>.from(userData['followedGroups'] ?? []);
+      final participatedEvents = List<String>.from(userData['participatedEvents'] ?? []);
+      final participatedQuizzes = List<String>.from(userData['participatedQuizzes'] ?? []);
+
+      final results = <Post>[];
+
+      // Helper to chunk lists for whereIn (Firestore limit ~10)
+      List<List<T>> _chunks<T>(List<T> list, int size) {
+        final chunks = <List<T>>[];
+        for (var i = 0; i < list.length; i += size) {
+          chunks.add(list.sublist(i, i + size > list.length ? list.length : i + size));
+        }
+        return chunks;
+      }
+
+      // 3) Query usersPost authored by friends
+      if (friendIds.isNotEmpty) {
+        final chunks = _chunks<String>(friendIds, 10);
+        for (final chunk in chunks) {
+          final q = await _firestore.collection('usersPost').where('authorId', whereIn: chunk).get();
+          for (final doc in q.docs) {
+            results.add(Post.fromFirestore(doc));
+          }
+        }
+      }
+
+      // 4) Query top-level posts that reference contexts the user follows/participates in
+      Future<void> _queryPostsByField(List<String> ids, String field) async {
+        if (ids.isEmpty) return;
+        final chunks = _chunks<String>(ids, 10);
+        for (final chunk in chunks) {
+          final q = await _firestore.collection('posts').where(field, whereIn: chunk).get();
+          for (final doc in q.docs) {
+            results.add(Post.fromFirestore(doc));
+          }
+        }
+      }
+
+      await _queryPostsByField(followedPages, 'pageId');
+      await _queryPostsByField(followedGroups, 'groupId');
+      await _queryPostsByField(participatedEvents, 'eventId');
+      await _queryPostsByField(participatedQuizzes, 'quizId');
+
+      // 5) Also include recent global posts as fallback (limit to 20)
+      final recentSnap = await _firestore.collection('posts').orderBy('createdAt', descending: true).limit(20).get();
+      for (final doc in recentSnap.docs) {
+        results.add(Post.fromFirestore(doc));
+      }
+
+      // 6) Deduplicate by id and sort by createdAt desc
+      final map = <String, Post>{};
+      for (final p in results) {
+        map[p.id] = p;
+      }
+      final unique = map.values.toList();
+      unique.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return unique;
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<PostPermissions> getPostPermissions() async {
