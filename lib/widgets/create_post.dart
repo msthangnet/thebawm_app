@@ -24,7 +24,7 @@ class _CreatePostState extends State<CreatePost> {
   Future<void> _pickImages() async {
     if (!widget.permissions.canPostImages) return;
     try {
-      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
       if (pickedFiles != null && pickedFiles.isNotEmpty) {
         setState(() {
           _mediaFiles = pickedFiles;

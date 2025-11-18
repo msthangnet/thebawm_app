@@ -39,7 +39,7 @@ class LyricsListScreen extends StatelessWidget {
                   future: UserService().getUserById(l.authorId),
                   builder: (context, usnap) {
                     if (usnap.connectionState == ConnectionState.waiting) return Text(l.authorId);
-                    final up = usnap.data as UserProfile?;
+                    final up = usnap.data;
                     if (up == null) return Text(l.authorId);
                     return Row(children: [if (up.profilePictureUrl != null) Padding(padding: const EdgeInsets.only(right:8.0), child: CircleAvatar(backgroundImage: NetworkImage(up.profilePictureUrl!), radius: 10)), Text(up.displayName)]);
                   },

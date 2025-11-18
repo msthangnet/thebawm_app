@@ -72,7 +72,7 @@ class _AboutBawmCardState extends State<AboutBawmCard> {
               Text(widget.publication.description ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
             ]),
           ),
-          ButtonBar(alignment: MainAxisAlignment.spaceBetween, children: [
+          OverflowBar(alignment: MainAxisAlignment.spaceBetween, children: [
             TextButton(onPressed: () => Navigator.of(context).pushNamed('/about-bawm/${widget.publication.slug}'), child: const Text('Read')),
             if (canDelete) IconButton(icon: _deleting ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.delete), onPressed: _deleting ? null : _handleDelete)
           ])

@@ -41,7 +41,7 @@ class QuizzesListScreen extends StatelessWidget {
                     future: UserService().getUserById(q.authorId),
                     builder: (context, usnap) {
                       if (usnap.connectionState == ConnectionState.waiting) return const SizedBox();
-                      final up = usnap.data as UserProfile?;
+                      final up = usnap.data;
                       if (up == null) return const SizedBox();
                       return Row(children: [if (up.profilePictureUrl != null) Padding(padding: const EdgeInsets.only(right:8.0), child: CircleAvatar(backgroundImage: NetworkImage(up.profilePictureUrl!), radius: 10)), Text(up.displayName)]);
                     },

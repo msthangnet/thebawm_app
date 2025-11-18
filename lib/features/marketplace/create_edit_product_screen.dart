@@ -20,7 +20,7 @@ class _CreateEditProductScreenState extends State<CreateEditProductScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
-  List<File> _images = [];
+  final List<File> _images = [];
   final _picker = ImagePicker();
   bool _loading = false;
 
@@ -36,7 +36,7 @@ class _CreateEditProductScreenState extends State<CreateEditProductScreen> {
 
   Future<void> _pickImages() async {
     final picked = await _picker.pickMultiImage(imageQuality: 80);
-    if (picked != null) setState(() => _images.addAll(picked.map((p) => File(p.path))));
+    setState(() => _images.addAll(picked.map((p) => File(p.path))));
   }
 
   Future<void> _submit() async {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/services/group_service.dart';
 import 'package:myapp/services/community_service.dart';
-import 'package:myapp/models/group.dart';
 
 class GroupMembersListScreen extends StatelessWidget {
   final String groupId;

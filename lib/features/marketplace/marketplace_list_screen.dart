@@ -40,7 +40,7 @@ class MarketplaceListScreen extends StatelessWidget {
                   future: UserService().getUserById(p.ownerId),
                   builder: (context, usnap) {
                     if (usnap.connectionState == ConnectionState.waiting) return Text('\$${p.price.toStringAsFixed(2)}');
-                    final up = usnap.data as UserProfile?;
+                    final up = usnap.data;
                     if (up == null) return Text('\$${p.price.toStringAsFixed(2)}');
                     return Row(children: [Text('\$${p.price.toStringAsFixed(2)}'), const SizedBox(width: 8), if (up.profilePictureUrl != null) Padding(padding: const EdgeInsets.only(right:8.0), child: CircleAvatar(backgroundImage: NetworkImage(up.profilePictureUrl!), radius: 10)), Text(up.displayName)]);
                   },

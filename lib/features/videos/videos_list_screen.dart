@@ -40,7 +40,7 @@ class VideosListScreen extends StatelessWidget {
                   future: UserService().getUserById(v.authorId),
                   builder: (context, usnap) {
                     if (usnap.connectionState == ConnectionState.waiting) return Text(v.authorId);
-                    final up = usnap.data as UserProfile?;
+                    final up = usnap.data;
                     if (up == null) return Text(v.authorId);
                     return Row(children: [if (up.profilePictureUrl != null) Padding(padding: const EdgeInsets.only(right:8.0), child: CircleAvatar(backgroundImage: NetworkImage(up.profilePictureUrl!), radius: 10)), Text(up.displayName)]);
                   },

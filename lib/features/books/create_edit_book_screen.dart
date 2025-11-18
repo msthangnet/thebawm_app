@@ -27,7 +27,7 @@ class _CreateEditBookScreenState extends State<CreateEditBookScreen> {
   bool _loading = false;
 
   List<PublicationPage> _pages = [];
-  Map<String, List<File>> _pageFiles = {};
+  final Map<String, List<File>> _pageFiles = {};
 
   @override
   void initState() {
@@ -81,7 +81,7 @@ class _CreateEditBookScreenState extends State<CreateEditBookScreen> {
 
   Future<void> _pickPageImages(String pageId) async {
     final picked = await _picker.pickMultiImage(imageQuality: 80);
-    if (picked != null && picked.isNotEmpty) {
+    if (picked.isNotEmpty) {
       setState(() {
         final files = picked.map((p) => File(p.path)).toList();
         _pageFiles[pageId] = [...?_pageFiles[pageId], ...files];
@@ -134,7 +134,7 @@ class _CreateEditBookScreenState extends State<CreateEditBookScreen> {
         final updates = {
           'title': _titleController.text.trim(),
           'description': _descriptionController.text.trim(),
-          'publishDate': _publishDate != null ? _publishDate : null,
+          'publishDate': _publishDate,
           'isPublished': _publishDate == null || (_publishDate != null && _publishDate!.isBefore(DateTime.now())),
         };
   final ok = await service.updatePublication(widget.existingPublication!.id, updates, coverFile: _coverFile, pageFiles: _pageFiles, pages: _pages);
