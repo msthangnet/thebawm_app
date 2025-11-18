@@ -79,7 +79,7 @@ class _FeedScreenState extends State<FeedScreen> {
                       return CreatePost(permissions: permissions);
                     }
                     final post = posts[index - 1];
-                    return PostCard(post: post);
+                    return PostCard(post: post, permissions: permissions);
                   },
                 );
               },
