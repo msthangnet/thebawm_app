@@ -75,6 +75,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: const Text('Login'),
                 ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  // Google sign-in
+                  final requiresVerification = await
+                      Provider.of<AuthProvider>(context, listen: false)
+                          .signInWithGoogle();
+                  if (!context.mounted) return;
+                  if (requiresVerification) {
+                    context.go(AppRoutes.verifyEmail);
+                    return;
+                  }
+                },
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Google'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
               TextButton(
                 onPressed: () => context.go(AppRoutes.forgotPassword),
                 child: const Text('Forgot Password?'),

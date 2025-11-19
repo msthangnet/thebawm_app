@@ -5,6 +5,7 @@ import 'package:myapp/features/auth/forgot_password_screen.dart';
 import 'package:myapp/features/auth/login_screen.dart';
 import 'package:myapp/features/auth/signup_screen.dart';
 import 'package:myapp/features/auth/verify_email_screen.dart';
+import 'package:myapp/features/auth/landing_screen.dart';
 import 'package:myapp/features/home/home_screen.dart';
 import 'package:myapp/features/profile/profile_route.dart';
 import 'package:myapp/features/pages/pages_list_screen.dart';
@@ -28,8 +29,12 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     refreshListenable: authProvider,
-    initialLocation: AppRoutes.login,
+    initialLocation: AppRoutes.landing,
     routes: [
+      GoRoute(
+        path: AppRoutes.landing,
+        builder: (context, state) => const LandingScreen(),
+      ),
       GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const HomeScreen(),
@@ -113,18 +118,27 @@ class AppRouter {
       final auth = context.read<AuthProvider>();
       final isLoggedIn = auth.status == AuthStatus.authenticated;
 
-      // Use state.matchedLocation to get the path of the route being navigated to.
-      final isLoggingIn =
-          state.matchedLocation == AppRoutes.login ||
-          state.matchedLocation == AppRoutes.signup ||
-          state.matchedLocation == AppRoutes.forgotPassword ||
-          state.matchedLocation == AppRoutes.verifyEmail;
+      // Pages allowed for unauthenticated users
+      final allowedWhenUnauthenticated = {
+        AppRoutes.landing,
+        AppRoutes.login,
+        AppRoutes.signup,
+        AppRoutes.forgotPassword,
+        AppRoutes.verifyEmail,
+      };
 
-      if (!isLoggedIn && !isLoggingIn) {
-        return AppRoutes.login;
+      final goingTo = state.matchedLocation;
+
+      // If user requires email verification, always send them to verify page
+      if (auth.requiresEmailVerification && goingTo != AppRoutes.verifyEmail) {
+        return AppRoutes.verifyEmail;
       }
 
-      if (isLoggedIn && isLoggingIn) {
+      if (!isLoggedIn && !allowedWhenUnauthenticated.contains(goingTo)) {
+        return AppRoutes.landing;
+      }
+
+      if (isLoggedIn && allowedWhenUnauthenticated.contains(goingTo)) {
         return AppRoutes.home;
       }
 

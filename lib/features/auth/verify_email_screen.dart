@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:myapp/providers/auth_provider.dart' as app_auth;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:myapp/config/app_routes.dart';
@@ -30,6 +32,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       if (user?.emailVerified == true) {
         timer.cancel();
         if (mounted) {
+          // Clear provider verification flag if present
+          final auth = Provider.of<app_auth.AuthProvider>(
+            context,
+            listen: false,
+          );
+          if (auth.requiresEmailVerification) {
+            // provider will pick up authStateChanges and update status
+          }
           context.go(AppRoutes.home);
         }
       }
@@ -105,10 +115,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Text(
-                'We have sent a verification link to ${_auth.currentUser?.email}. Please check your email and click the link to verify your account.',
-                textAlign: TextAlign.center,
-              ),
+              Builder(builder: (context) {
+                final pendingEmail = Provider.of<app_auth.AuthProvider>(
+                      context,
+                    ).pendingEmail ??
+                    _auth.currentUser?.email;
+                return Text(
+                  'We have sent a verification link to $pendingEmail. Please check your email and click the link to verify your account.',
+                  textAlign: TextAlign.center,
+                );
+              }),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isSending || _resendTimer > 0 ? null : _resendEmail,
@@ -121,9 +137,23 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.go(AppRoutes.login),
-                child: const Text('Back to Login'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => context.go(AppRoutes.login),
+                    child: const Text('Back to Login'),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () async {
+                      await _auth.signOut();
+                      if (!context.mounted) return;
+                      context.go(AppRoutes.landing);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ],
               ),
             ],
           ),

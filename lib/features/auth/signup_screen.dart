@@ -98,6 +98,28 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(onPressed: _signUp, child: const Text('Sign Up')),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  // Google sign-up / sign-in
+                  final requiresVerification = await Provider.of<AuthProvider>(
+                    context,
+                    listen: false,
+                  ).signInWithGoogle();
+                  if (!mounted) return;
+                  if (requiresVerification) {
+                    context.go(AppRoutes.verifyEmail);
+                    return;
+                  }
+                  // else router will react to auth state and navigate to home
+                },
+                icon: const Icon(Icons.login),
+                label: const Text('Sign up with Google'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
+                ),
+              ),
             ],
           ),
         ),

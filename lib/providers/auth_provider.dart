@@ -110,6 +110,35 @@ class AuthProvider with ChangeNotifier {
     return requiresVerification;
   }
 
+  /// Sign in using Google auth flow.
+  Future<bool> signInWithGoogle() async {
+    _status = AuthStatus.authenticating;
+    notifyListeners();
+    final cred = await _authService.signInWithGoogle();
+    bool requiresVerification = false;
+    final u = cred?.user ?? _authService.currentUser;
+    if (u != null) {
+      await u.reload();
+      if (!u.emailVerified) {
+        try {
+          await u.sendEmailVerification();
+        } catch (_) {}
+        _requiresEmailVerification = true;
+        _pendingEmail = u.email;
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        requiresVerification = true;
+      } else {
+        _requiresEmailVerification = false;
+        _pendingEmail = null;
+        _user = u;
+        _status = AuthStatus.authenticated;
+        notifyListeners();
+      }
+    }
+    return requiresVerification;
+  }
+
   Future<void> sendPasswordReset(String email) async {
     await _authService.sendPasswordResetEmail(email: email);
   }

@@ -46,6 +46,7 @@ dependencies:
   firebase_storage: ^13.0.4
   shared_preferences: ^2.1.1
   fluttertoast: ^9.0.0
+  google_sign_in: ^6.1.0
 
 dev_dependencies:
   flutter_test:
