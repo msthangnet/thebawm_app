@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:myapp/config/app_routes.dart';
 import 'package:myapp/providers/auth_provider.dart';
+import 'package:myapp/api/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,15 +47,31 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
               if (authProvider.status == AuthStatus.authenticating)
                 const CircularProgressIndicator()
-              else
+                else
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      authProvider.signIn(
-                        _emailController.text,
-                        _passwordController.text,
-                      );
+                  onPressed: () async {
+                    if (!_formKey.currentState!.validate()) return;
+                    final email = _emailController.text;
+                    final password = _passwordController.text;
+                    final authService = AuthService();
+                    final cred = await authService.signInWithEmailAndPassword(
+                      email: email,
+                      password: password,
+                    );
+                    final u = cred?.user ?? authService.currentUser;
+                    if (u != null) {
+                      await u.reload();
+                      if (!u.emailVerified) {
+                        try {
+                          await u.sendEmailVerification();
+                        } catch (_) {}
+                        if (!context.mounted) return;
+                        context.go(AppRoutes.verifyEmail);
+                        return;
+                      }
                     }
+                    // Otherwise the AuthProvider's authStateChanges listener will
+                    // update the app routing state when the user is fully signed-in.
                   },
                   child: const Text('Login'),
                 ),

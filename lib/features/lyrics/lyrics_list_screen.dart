@@ -4,7 +4,6 @@ import 'package:myapp/services/lyric_service.dart';
 import 'package:myapp/models/lyric.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/services/user_service.dart';
-import 'package:myapp/models/user_profile.dart';
 import 'create_edit_lyric_screen.dart';
 
 class LyricsListScreen extends StatelessWidget {

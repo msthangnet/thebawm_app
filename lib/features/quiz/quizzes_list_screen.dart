@@ -4,7 +4,6 @@ import 'package:myapp/services/quiz_service.dart';
 import 'package:myapp/models/quiz.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'package:myapp/services/user_service.dart';
-import 'package:myapp/models/user_profile.dart';
 import 'create_edit_quiz_screen.dart';
 
 class QuizzesListScreen extends StatelessWidget {

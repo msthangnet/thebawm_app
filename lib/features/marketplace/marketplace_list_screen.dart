@@ -5,7 +5,6 @@ import 'package:myapp/models/product.dart';
 import 'package:myapp/providers/auth_provider.dart';
 import 'create_edit_product_screen.dart';
 import 'package:myapp/services/user_service.dart';
-import 'package:myapp/models/user_profile.dart';
 
 class MarketplaceListScreen extends StatelessWidget {
   const MarketplaceListScreen({super.key});
