@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 export const UserProfileSchema = z.object({
@@ -499,5 +498,6 @@ export const NotificationSchema = z.object({
     entityType: z.enum(['user', 'group', 'event', 'quiz']),
     createdAt: z.any(),
     read: z.boolean(),
+    actionTaken: z.boolean().default(false).optional(),
 });
 export type Notification = z.infer<typeof NotificationSchema>;

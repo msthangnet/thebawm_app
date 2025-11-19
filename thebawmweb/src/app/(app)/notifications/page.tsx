@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, getDocs, documentId, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, getDocs, documentId, orderBy, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Notification, UserProfile, GroupInfo, EventInfo, QuizInfo } from "@/lib/types";
 import { Loader2 } from "lucide-react";
@@ -37,6 +37,16 @@ export default function NotificationsPage() {
         const unsubscribe = onSnapshot(q, async (snapshot) => {
             const rawNotifications = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
             
+            // Mark all unread notifications as read
+            const unreadNotifs = snapshot.docs.filter(d => !d.data().read);
+            if (unreadNotifs.length > 0) {
+                const batch = writeBatch(db);
+                unreadNotifs.forEach(notifDoc => {
+                    batch.update(doc(db, 'notifications', notifDoc.id), { read: true });
+                });
+                await batch.commit().catch(console.error);
+            }
+
             if (rawNotifications.length === 0) {
                 setNotifications([]);
                 setLoading(false);
@@ -86,7 +96,7 @@ export default function NotificationsPage() {
                          const quiz = quizzesMap.get(notif.entityId);
                          return quiz ? { ...base, quiz } as EnrichedNotification : null;
                     default:
-                        return null;
+                        return base as EnrichedNotification;
                 }
             }).filter((n): n is EnrichedNotification => n !== null);
 

@@ -2,7 +2,7 @@
 
 import { collection, getDocs, query, where, doc, getDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Post, UserProfile } from '@/lib/types';
+import type { Post, UserProfile, Video } from '@/lib/types';
 import { ProfilePostsClient } from '@/components/profile/profile-posts-client';
 
 
@@ -25,16 +25,23 @@ async function getUser(username: string): Promise<UserProfile | null> {
 
 async function getPosts(user: UserProfile): Promise<Post[]> {
   const postsRef = collection(db, 'usersPost');
-  const q = query(postsRef, where('authorId', '==', user.uid));
-  const querySnapshot = await getDocs(q);
+  const postsQuery = query(postsRef, where('authorId', '==', user.uid));
   
-  const posts = querySnapshot.docs.map(doc => {
+  const videosRef = collection(db, 'videos');
+  const videosQuery = query(videosRef, where('uploaderId', '==', user.uid));
+
+  const [postsSnapshot, videosSnapshot] = await Promise.all([
+    getDocs(postsQuery),
+    getDocs(videosQuery)
+  ]);
+  
+  const posts = postsSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
         authorId: data.authorId,
         text: data.text,
-        mediaUrl: data.mediaUrl,
+        mediaUrls: data.mediaUrl ? [data.mediaUrl] : data.mediaUrls,
         mediaType: data.mediaType,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         likes: data.likes || [],
@@ -43,10 +50,30 @@ async function getPosts(user: UserProfile): Promise<Post[]> {
         commentCount: data.commentCount || 0,
         author: user,
         postType: 'user',
-      }
-  }) as Post[];
+      } as Post;
+  });
+
+  const videoPosts: Post[] = videosSnapshot.docs.map(doc => {
+    const data = doc.data() as Video;
+    return {
+      id: doc.id,
+      authorId: data.uploaderId,
+      text: data.title, // Use video title as post text
+      mediaUrls: Object.values(data.videoUrls),
+      mediaType: 'video',
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+      likes: data.likes,
+      viewCount: data.viewCount,
+      shareCount: 0,
+      commentCount: data.commentCount,
+      author: user,
+      postType: 'user',
+    }
+  });
+
+  const allContent = [...posts, ...videoPosts];
   
-  return posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return allContent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 
@@ -80,5 +107,7 @@ export async function generateStaticParams() {
       username: user.username,
     }));
 }
+
+
 
 

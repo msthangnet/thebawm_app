@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Bell, Loader2 } from "lucide-react";
@@ -10,7 +9,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { collection, query, where, onSnapshot, getDocs, documentId, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserProfile, GroupInfo, EventInfo, QuizInfo, Notification as NotificationType } from "@/lib/types";
@@ -43,7 +42,8 @@ export function NotificationPopover() {
         const q = query(
             collection(db, 'notifications'), 
             where('recipientId', '==', user.uid),
-            orderBy('createdAt', 'desc')
+            orderBy('createdAt', 'desc'),
+            limit(10)
         );
 
         const unsubscribe = onSnapshot(q, async (snapshot) => {
@@ -99,7 +99,7 @@ export function NotificationPopover() {
                          const quiz = quizzesMap.get(notif.entityId);
                          return quiz ? { ...base, quiz } as EnrichedNotification : null;
                     default:
-                        return null;
+                        return base as EnrichedNotification;
                 }
             }).filter((n): n is EnrichedNotification => n !== null);
 
@@ -109,6 +109,10 @@ export function NotificationPopover() {
 
         return () => unsubscribe();
     }, [user]);
+
+    const unreadCount = useMemo(() => {
+        return notifications.filter(n => !n.read).length;
+    }, [notifications]);
 
     const handleViewAll = () => {
         setIsOpen(false);
@@ -122,9 +126,9 @@ export function NotificationPopover() {
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
-                    {notifications.length > 0 && (
+                    {unreadCount > 0 && (
                         <span className="absolute top-1 right-1 h-4 w-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">
-                           {notifications.length}
+                           {unreadCount}
                         </span>
                     )}
                 </Button>
@@ -133,7 +137,7 @@ export function NotificationPopover() {
                 <div className="p-4">
                     <h4 className="font-medium leading-none">Notifications</h4>
                     <p className="text-sm text-muted-foreground">
-                        You have {notifications.length} new notifications.
+                        You have {unreadCount} new notifications.
                     </p>
                 </div>
                 <div className="grid gap-1 max-h-96 overflow-y-auto p-2">
@@ -142,12 +146,11 @@ export function NotificationPopover() {
                             <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
                     )}
-                    {!loading && notifications.length > 0 && (
+                    {!loading && notifications.length > 0 ? (
                         notifications.slice(0, 4).map(notif => (
                            <NotificationItem key={notif.id} notification={notif} showActions={false} />
                         ))
-                    )}
-                    {!loading && notifications.length === 0 && (
+                    ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">No new notifications.</p>
                     )}
                 </div>

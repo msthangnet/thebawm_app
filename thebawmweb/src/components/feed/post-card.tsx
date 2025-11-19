@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { Post, Comment, UserProfile, PostPermissions } from "@/lib/types";
@@ -403,6 +404,19 @@ export function PostCard({ post: initialPost, permissions }: PostCardProps) {
     const postRef = doc(db, postCollection, post.id);
 
     try {
+      // Check if document exists before trying to update it
+      const docSnap = await getDoc(postRef);
+      if (!docSnap.exists()) {
+        console.warn("Post document does not exist, cannot update like.");
+        toast({
+          title: "Error",
+          description: "This post may have been deleted.",
+          variant: "destructive",
+        });
+        setIsLiking(false);
+        return;
+      }
+      
       if (isLiked) {
         await updateDoc(postRef, { likes: arrayRemove(user.uid) });
         setLikeCount((prev) => prev - 1);
